@@ -47,18 +47,18 @@ void WriteNode(TSink & sink, TrieChar baseChar, TValueList const & valueList,
   if (begChild == endChild && !isRoot)
   {
     // Leaf node.
-    valueList.Dump(sink);
+    // valueList.Dump(sink);
     return;
   }
   uint32_t const childCount = endChild - begChild;
-  uint32_t const valueCount = valueList.size();
+  uint32_t const valueCount = 0; // valueList.size();
   uint8_t const header = static_cast<uint32_t>((min(valueCount, 3U) << 6) + min(childCount, 63U));
   sink.Write(&header, 1);
   if (valueCount >= 3)
     WriteVarUint(sink, valueCount);
   if (childCount >= 63)
     WriteVarUint(sink, childCount);
-  valueList.Dump(sink);
+  // valueList.Dump(sink);
   for (TChildIter it = begChild; it != endChild; /*++it*/)
   {
     uint8_t header = (it->IsLeaf() ? 128 : 0);

@@ -18,18 +18,8 @@ public:
   template <class ReaderT>
   LeafIterator0(ReaderT const & reader, ValueReaderT const & valueReader)
   {
-    uint32_t const size = static_cast<uint32_t>(reader.Size());
     ReaderSource<ReaderT> src(reader);
-    while (src.Pos() < size)
-    {
-      this->m_value.push_back(ValueType());
-#ifdef DEBUG
-      uint64_t const pos = src.Pos();
-#endif
-      valueReader(src, this->m_value.back());
-      ASSERT_NOT_EQUAL(pos, src.Pos(), ());
-    }
-    ASSERT_EQUAL(size, src.Pos(), ());
+    ASSERT_EQUAL(src.Size(), 0, ());
   }
 
   Iterator<ValueType, EdgeValueType> * Clone() const
@@ -136,9 +126,6 @@ private:
       childCount = ReadVarUint<uint32_t>(src);
 
     // [value] ... [value]
-    this->m_value.resize(valueCount);
-    for (uint32_t i = 0; i < valueCount; ++i)
-      m_valueReader(src, this->m_value[i]);
 
     // [childInfo] ... [childInfo]
     this->m_edge.resize(childCount);
