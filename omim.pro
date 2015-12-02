@@ -8,7 +8,7 @@
 #   iphone / tizen / android: build an app (implies no-tests)
 
 lessThan(QT_MAJOR_VERSION, 5) {
-  error("You need Qt 5 to build this project. You have Qt $$QT_VERSION")
+  error("You need Qt 5 to build this project. You have Qt $$QT_VERSION.")
 }
 
 cache()
