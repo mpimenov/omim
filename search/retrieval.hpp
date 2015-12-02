@@ -7,6 +7,7 @@
 #include "geometry/rect2d.hpp"
 
 #include "base/cancellable.hpp"
+#include "base/exception.hpp"
 #include "base/macros.hpp"
 
 #include "std/function.hpp"
@@ -14,6 +15,7 @@
 #include "std/vector.hpp"
 
 class Index;
+class MwmValue;
 
 namespace coding
 {
@@ -22,6 +24,13 @@ class CompressedBitVector;
 
 namespace search
 {
+// This exception can be thrown by callbacks from deeps of search and
+// geometry retrieval for fast cancellation of time-consuming tasks.
+//
+// TODO (@gorshenin): after merge to master, move this class to
+// base/cancellable.hpp.
+DECLARE_EXCEPTION(CancelException, RootException);
+
 class Retrieval : public my::Cancellable
 {
 public:
@@ -102,6 +111,11 @@ public:
   };
 
   Retrieval();
+
+  // Retrieves from the search index corresponding to |value| all
+  // features matching to |params|.
+  static unique_ptr<coding::CompressedBitVector> RetrieveAddressFeatures(
+      MwmValue * value, my::Cancellable const & cancellable, SearchQueryParams const & params);
 
   // Initializes retrieval process, sets up internal state, takes all
   // necessary system resources.
