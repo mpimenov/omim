@@ -3,6 +3,7 @@
 #include "indexer/categories_holder.hpp"
 #include "indexer/classificator.hpp"
 
+#include "base/assert.hpp"
 #include "base/stl_helpers.hpp"
 
 #include "std/algorithm.hpp"
@@ -31,7 +32,7 @@ NewFeatureCategories::NewFeatureCategories(editor::EditorConfig const & config)
 void NewFeatureCategories::AddLanguage(string const & lang)
 {
   auto const langCode = CategoriesHolder::MapLocaleToInteger(lang);
-  vector<pair<string, uint32_t>> names;
+  NewFeatureCategories::TNames names;
   names.reserve(m_types.size());
   for (auto const & type : m_types)
   {
@@ -42,14 +43,14 @@ void NewFeatureCategories::AddLanguage(string const & lang)
   m_categoriesByLang[lang] = names;
 }
 
-vector<pair<string, uint32_t>> NewFeatureCategories::Search(string const & query,
-                                                            string const & lang) const
+NewFeatureCategories::TNames NewFeatureCategories::Search(string const & query,
+                                                          string const & lang) const
 {
   auto const langCode = CategoriesHolder::MapLocaleToInteger(lang);
   vector<uint32_t> resultTypes;
   m_index.GetAssociatedTypes(query, resultTypes);
 
-  vector<pair<string, uint32_t>> result(resultTypes.size());
+  NewFeatureCategories::TNames result(resultTypes.size());
   for (size_t i = 0; i < result.size(); ++i)
     result[i] = {m_index.GetCategoriesHolder()->GetReadableFeatureType(resultTypes[i], langCode),
                  resultTypes[i]};
@@ -57,11 +58,11 @@ vector<pair<string, uint32_t>> NewFeatureCategories::Search(string const & query
   return result;
 }
 
-vector<pair<string, uint32_t>> NewFeatureCategories::GetAllCategoryNames(string const & lang)
+NewFeatureCategories::TNames const & NewFeatureCategories::GetAllCategoryNames(
+    string const & lang) const
 {
   auto const it = m_categoriesByLang.find(lang);
-  if (it == m_categoriesByLang.end())
-    return {};
+  CHECK(it != m_categoriesByLang.end(), ());
   return it->second;
 }
 }  // namespace osm
