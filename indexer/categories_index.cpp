@@ -102,27 +102,29 @@ void CategoriesIndex::GetAssociatedTypes(string const & query, vector<uint32_t> 
 {
   bool first = true;
   set<uint32_t> intersection;
-  ForEachToken(query, [&](string const & token)
-               {
-                 set<uint32_t> types;
-                 auto fn = [&](string const &, uint32_t type)
-                 {
-                   types.insert(type);
-                 };
-                 m_trie.ForEachInSubtree(token, fn);
-                 if (first)
-                 {
-                   intersection.swap(types);
-                 }
-                 else
-                 {
-                   set<uint32_t> tmp;
-                   set_intersection(intersection.begin(), intersection.end(), types.begin(),
-                                    types.end(), inserter(tmp, tmp.begin()));
-                   intersection.swap(tmp);
-                 }
-                 first = false;
-               });
+  auto processToken = [&](string const & token)
+  {
+    set<uint32_t> types;
+    auto fn = [&](string const &, uint32_t type)
+    {
+      types.insert(type);
+    };
+    m_trie.ForEachInSubtree(token, fn);
+
+    if (first)
+    {
+      intersection.swap(types);
+    }
+    else
+    {
+      set<uint32_t> tmp;
+      set_intersection(intersection.begin(), intersection.end(), types.begin(), types.end(),
+                       inserter(tmp, tmp.begin()));
+      intersection.swap(tmp);
+    }
+    first = false;
+  };
+  ForEachToken(query, processToken);
 
   result.insert(result.end(), intersection.begin(), intersection.end());
 }
