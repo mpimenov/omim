@@ -31,34 +31,36 @@ NewFeatureCategories::NewFeatureCategories(editor::EditorConfig const & config)
 void NewFeatureCategories::AddLanguage(string const & lang)
 {
   auto const langCode = CategoriesHolder::MapLocaleToInteger(lang);
-  vector<string> names;
+  vector<pair<string, uint32_t>> names;
   names.reserve(m_types.size());
   for (auto const & type : m_types)
   {
     m_index.AddCategoryByTypeAndLang(type, langCode);
-    names.push_back(m_index.GetCategoriesHolder()->GetReadableFeatureType(type, langCode));
+    names.emplace_back(m_index.GetCategoriesHolder()->GetReadableFeatureType(type, langCode), type);
   }
   my::SortUnique(names);
-  m_categoryNames[lang] = names;
+  m_categoriesByLang[lang] = names;
 }
 
-vector<string> NewFeatureCategories::Search(string const & query, string const & lang) const
+vector<pair<string, uint32_t>> NewFeatureCategories::Search(string const & query,
+                                                            string const & lang) const
 {
   auto const langCode = CategoriesHolder::MapLocaleToInteger(lang);
   vector<uint32_t> resultTypes;
   m_index.GetAssociatedTypes(query, resultTypes);
 
-  vector<string> result(resultTypes.size());
+  vector<pair<string, uint32_t>> result(resultTypes.size());
   for (size_t i = 0; i < result.size(); ++i)
-    result[i] = m_index.GetCategoriesHolder()->GetReadableFeatureType(resultTypes[i], langCode);
+    result[i] = {m_index.GetCategoriesHolder()->GetReadableFeatureType(resultTypes[i], langCode),
+                 resultTypes[i]};
   my::SortUnique(result);
   return result;
 }
 
-vector<string> NewFeatureCategories::GetAllCategoryNames(string const & lang)
+vector<pair<string, uint32_t>> NewFeatureCategories::GetAllCategoryNames(string const & lang)
 {
-  auto const it = m_categoryNames.find(lang);
-  if (it == m_categoryNames.end())
+  auto const it = m_categoriesByLang.find(lang);
+  if (it == m_categoriesByLang.end())
     return {};
   return it->second;
 }
