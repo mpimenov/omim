@@ -15,7 +15,11 @@ class MemTrie
 public:
   MemTrie() = default;
 
-  MemTrie(MemTrie && other) : m_root(move(other.m_root)), m_numNodes(other.m_numNodes) {}
+  MemTrie(MemTrie && other) : m_root(move(other.m_root))
+  {
+    m_numNodes = other.m_numNodes;
+    other.m_numNodes = 0;
+  }
 
   // Adds a key-value pair to the trie.
   void Add(TString const & key, TValue const & value)
