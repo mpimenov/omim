@@ -29,9 +29,17 @@ NewFeatureCategories::NewFeatureCategories(editor::EditorConfig const & config)
   }
 }
 
-void NewFeatureCategories::AddLanguage(string const & lang)
+void NewFeatureCategories::AddLanguage(string lang)
 {
-  auto const langCode = CategoriesHolder::MapLocaleToInteger(lang);
+  auto langCode = CategoriesHolder::MapLocaleToInteger(lang);
+  if (langCode == CategoriesHolder::kUnsupportedLocaleCode)
+  {
+    lang = "en";
+     langCode = 1;
+  }
+  if (m_categoriesByLang.find(lang) != m_categoriesByLang.end())
+    return;
+
   NewFeatureCategories::TNames names;
   names.reserve(m_types.size());
   for (auto const & type : m_types)
@@ -43,10 +51,14 @@ void NewFeatureCategories::AddLanguage(string const & lang)
   m_categoriesByLang[lang] = names;
 }
 
-NewFeatureCategories::TNames NewFeatureCategories::Search(string const & query,
-                                                          string const & lang) const
+NewFeatureCategories::TNames NewFeatureCategories::Search(string const & query, string lang) const
 {
-  auto const langCode = CategoriesHolder::MapLocaleToInteger(lang);
+  auto langCode = CategoriesHolder::MapLocaleToInteger(lang);
+  if (langCode == CategoriesHolder::kUnsupportedLocaleCode)
+  {
+    lang = "en";
+     langCode = 1;
+  }
   vector<uint32_t> resultTypes;
   m_index.GetAssociatedTypes(query, resultTypes);
 
@@ -61,7 +73,9 @@ NewFeatureCategories::TNames NewFeatureCategories::Search(string const & query,
 NewFeatureCategories::TNames const & NewFeatureCategories::GetAllCategoryNames(
     string const & lang) const
 {
-  auto const it = m_categoriesByLang.find(lang);
+  auto it = m_categoriesByLang.find(lang);
+  if (it == m_categoriesByLang.end())
+    it = m_categoriesByLang.find("en");
   CHECK(it != m_categoriesByLang.end(), ());
   return it->second;
 }
