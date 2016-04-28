@@ -20,6 +20,7 @@ namespace
 {
 using TCuisine = pair<string, string>;
 osm::EditableMapObject g_editableMapObject;
+std::unique_ptr<osm::NewFeatureCategories> g_featureCategoriesPtr;
 
 jclass g_featureCategoryClazz;
 jmethodID g_featureCtor;
@@ -32,9 +33,10 @@ jmethodID g_localStreetCtor;
 jfieldID g_localStreetFieldDef;
 jfieldID g_localStreetFieldLoc;
 
-jobject ToJavaFeatureCategory(JNIEnv * env, osm::Category const & category)
+jobject ToJavaFeatureCategory(JNIEnv * env, osm::NewFeatureCategories::TName const & category)
 {
-  return env->NewObject(g_featureCategoryClazz, g_featureCtor, category.m_type, jni::TScopedLocalRef(env, jni::ToJavaString(env, category.m_name)).get());
+  return env->NewObject(g_featureCategoryClazz, g_featureCtor, category.second,
+                        jni::TScopedLocalRef(env, jni::ToJavaString(env, category.first)).get());
 }
 
 jobject ToJavaName(JNIEnv * env, osm::LocalizedName const & name)
@@ -394,17 +396,35 @@ Java_com_mapswithme_maps_editor_Editor_nativeCreateMapObject(JNIEnv *, jclass, j
         ("Couldn't create mapobject, wrong coordinates of missing mwm"));
 }
 
-JNIEXPORT jobjectArray JNICALL
-Java_com_mapswithme_maps_editor_Editor_nativeGetNewFeatureCategories(JNIEnv * env, jclass clazz)
+JNIEXPORT void JNICALL
+Java_com_mapswithme_maps_editor_Editor_nativeInitFeatureCategories(JNIEnv * env, jclass clazz)
 {
-  return jni::ToJavaArray(env, g_featureCategoryClazz, g_framework->NativeFramework()->GetEditorCategories().m_allSorted,
+  g_featureCategoriesPtr.reset(new osm::NewFeatureCategories(g_framework->NativeFramework()->GetEditorCategories()));
+}
+
+JNIEXPORT jobjectArray JNICALL
+Java_com_mapswithme_maps_editor_Editor_nativeGetAllFeatureCategories(JNIEnv * env, jclass clazz, jstring jLang)
+{
+  if (!g_featureCategoriesPtr)
+    g_featureCategoriesPtr.reset(new osm::NewFeatureCategories(g_framework->NativeFramework()->GetEditorCategories()));
+
+  string const & lang = jni::ToNativeString(env, jLang);
+  g_featureCategoriesPtr->AddLanguage(lang);
+  return jni::ToJavaArray(env, g_featureCategoryClazz,
+                          g_featureCategoriesPtr->GetAllCategoryNames(lang),
                           ToJavaFeatureCategory);
 }
 
 JNIEXPORT jobjectArray JNICALL
-Java_com_mapswithme_maps_editor_Editor_nativeGetUsedFeatureCategories(JNIEnv * env, jclass clazz)
+Java_com_mapswithme_maps_editor_Editor_nativeSearchFeatureCategories(JNIEnv * env, jclass clazz, jstring query, jstring jLang)
 {
-  return jni::ToJavaArray(env, g_featureCategoryClazz, g_framework->NativeFramework()->GetEditorCategories().m_lastUsed,
+  if (!g_featureCategoriesPtr)
+    g_featureCategoriesPtr.reset(new osm::NewFeatureCategories(g_framework->NativeFramework()->GetEditorCategories()));
+
+  string const & lang = jni::ToNativeString(env, jLang);
+  g_featureCategoriesPtr->AddLanguage(lang);
+  return jni::ToJavaArray(env, g_featureCategoryClazz,
+                          g_featureCategoriesPtr->Search(jni::ToNativeString(env, query), lang),
                           ToJavaFeatureCategory);
 }
 

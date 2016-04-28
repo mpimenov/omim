@@ -119,8 +119,14 @@ public final class Editor
    */
   public static native boolean nativeSaveEditedFeature();
 
-  public static native FeatureCategory[] nativeGetNewFeatureCategories();
-  public static native FeatureCategory[] nativeGetUsedFeatureCategories();
+  /**
+   * Initializes feature categories and resets all synonyms for previously added languages.
+   */
+  public static native void nativeInitFeatureCategories();
+  @NonNull
+  public static native FeatureCategory[] nativeGetAllFeatureCategories(String lang);
+  @NonNull
+  public static native FeatureCategory[] nativeSearchFeatureCategories(String query, String lang);
 
   /**
    * Creates new object on the map. Places it in the center of current viewport.
