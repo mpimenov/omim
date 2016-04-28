@@ -119,10 +119,6 @@ public final class Editor
    */
   public static native boolean nativeSaveEditedFeature();
 
-  /**
-   * Initializes feature categories and resets all synonyms for previously added languages.
-   */
-  public static native void nativeInitFeatureCategories();
   @NonNull
   public static native FeatureCategory[] nativeGetAllFeatureCategories(String lang);
   @NonNull

@@ -20,7 +20,6 @@ namespace
 {
 using TCuisine = pair<string, string>;
 osm::EditableMapObject g_editableMapObject;
-std::unique_ptr<osm::NewFeatureCategories> g_featureCategoriesPtr;
 
 jclass g_featureCategoryClazz;
 jmethodID g_featureCtor;
@@ -53,6 +52,12 @@ jobject ToJavaStreet(JNIEnv * env, osm::LocalizedStreet const & street)
   return env->NewObject(g_localStreetClazz, g_localStreetCtor,
                         jni::TScopedLocalRef(env, jni::ToJavaString(env, street.m_defaultName)).get(),
                         jni::TScopedLocalRef(env, jni::ToJavaString(env, street.m_localizedName)).get());
+}
+
+osm::NewFeatureCategories & GetFeatureCategories()
+{
+  static osm::NewFeatureCategories categories = g_framework->NativeFramework()->GetEditorCategories();
+  return categories;
 }
 }  // namespace
 
@@ -396,35 +401,23 @@ Java_com_mapswithme_maps_editor_Editor_nativeCreateMapObject(JNIEnv *, jclass, j
         ("Couldn't create mapobject, wrong coordinates of missing mwm"));
 }
 
-JNIEXPORT void JNICALL
-Java_com_mapswithme_maps_editor_Editor_nativeInitFeatureCategories(JNIEnv * env, jclass clazz)
-{
-  g_featureCategoriesPtr.reset(new osm::NewFeatureCategories(g_framework->NativeFramework()->GetEditorCategories()));
-}
-
 JNIEXPORT jobjectArray JNICALL
 Java_com_mapswithme_maps_editor_Editor_nativeGetAllFeatureCategories(JNIEnv * env, jclass clazz, jstring jLang)
 {
-  if (!g_featureCategoriesPtr)
-    g_featureCategoriesPtr.reset(new osm::NewFeatureCategories(g_framework->NativeFramework()->GetEditorCategories()));
-
   string const & lang = jni::ToNativeString(env, jLang);
-  g_featureCategoriesPtr->AddLanguage(lang);
+  GetFeatureCategories().AddLanguage(lang);
   return jni::ToJavaArray(env, g_featureCategoryClazz,
-                          g_featureCategoriesPtr->GetAllCategoryNames(lang),
+                          GetFeatureCategories()->GetAllCategoryNames(lang),
                           ToJavaFeatureCategory);
 }
 
 JNIEXPORT jobjectArray JNICALL
 Java_com_mapswithme_maps_editor_Editor_nativeSearchFeatureCategories(JNIEnv * env, jclass clazz, jstring query, jstring jLang)
 {
-  if (!g_featureCategoriesPtr)
-    g_featureCategoriesPtr.reset(new osm::NewFeatureCategories(g_framework->NativeFramework()->GetEditorCategories()));
-
   string const & lang = jni::ToNativeString(env, jLang);
-  g_featureCategoriesPtr->AddLanguage(lang);
+  GetFeatureCategories().AddLanguage(lang);
   return jni::ToJavaArray(env, g_featureCategoryClazz,
-                          g_featureCategoriesPtr->Search(jni::ToNativeString(env, query), lang),
+                          GetFeatureCategories()->Search(jni::ToNativeString(env, query), lang),
                           ToJavaFeatureCategory);
 }
 

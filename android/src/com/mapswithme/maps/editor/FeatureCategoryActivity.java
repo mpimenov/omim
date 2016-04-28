@@ -15,7 +15,6 @@ public class FeatureCategoryActivity extends BaseMwmFragmentActivity implements 
   protected void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
-    Editor.nativeInitFeatureCategories();
   }
 
   @Override
