@@ -29,13 +29,20 @@ NewFeatureCategories::NewFeatureCategories(editor::EditorConfig const & config)
   }
 }
 
+NewFeatureCategories::NewFeatureCategories(NewFeatureCategories && other)
+  : m_index(move(other.m_index))
+  , m_types(move(other.m_types))
+  , m_categoriesByLang(move(other.m_categoriesByLang))
+{
+}
+
 void NewFeatureCategories::AddLanguage(string lang)
 {
   auto langCode = CategoriesHolder::MapLocaleToInteger(lang);
   if (langCode == CategoriesHolder::kUnsupportedLocaleCode)
   {
     lang = "en";
-     langCode = 1;
+    langCode = CategoriesHolder::kEnglishCode;
   }
   if (m_categoriesByLang.find(lang) != m_categoriesByLang.end())
     return;
@@ -57,15 +64,18 @@ NewFeatureCategories::TNames NewFeatureCategories::Search(string const & query, 
   if (langCode == CategoriesHolder::kUnsupportedLocaleCode)
   {
     lang = "en";
-     langCode = 1;
+    langCode = CategoriesHolder::kEnglishCode;
   }
   vector<uint32_t> resultTypes;
   m_index.GetAssociatedTypes(query, resultTypes);
 
   NewFeatureCategories::TNames result(resultTypes.size());
   for (size_t i = 0; i < result.size(); ++i)
-    result[i] = {m_index.GetCategoriesHolder()->GetReadableFeatureType(resultTypes[i], langCode),
-                 resultTypes[i]};
+  {
+    result[i].first =
+        m_index.GetCategoriesHolder()->GetReadableFeatureType(resultTypes[i], langCode);
+    result[i].second = resultTypes[i];
+  }
   my::SortUnique(result);
   return result;
 }

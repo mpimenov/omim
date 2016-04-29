@@ -23,12 +23,7 @@ public:
 
   NewFeatureCategories(editor::EditorConfig const & config);
 
-  NewFeatureCategories(NewFeatureCategories && other)
-    : m_index(move(other.m_index))
-    , m_types(move(other.m_types))
-    , m_categoriesByLang(move(other.m_categoriesByLang))
-  {
-  }
+  NewFeatureCategories(NewFeatureCategories && other);
 
   NewFeatureCategories() = default;
 
