@@ -240,8 +240,7 @@ string locale()
 {
   if (self.isSearch)
     return m_filteredCategories;
-  else
-    return m_categories.GetAllCategoryNames(locale());
+  return m_categories.GetAllCategoryNames(locale());
 // TODO(Vlad): Uncoment this line when we will be ready to show recent categories
 //    if (m_categories.m_lastUsed.empty())
 //      return m_categories.m_allSorted;
