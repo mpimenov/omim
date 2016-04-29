@@ -407,7 +407,7 @@ Java_com_mapswithme_maps_editor_Editor_nativeGetAllFeatureCategories(JNIEnv * en
   string const & lang = jni::ToNativeString(env, jLang);
   GetFeatureCategories().AddLanguage(lang);
   return jni::ToJavaArray(env, g_featureCategoryClazz,
-                          GetFeatureCategories()->GetAllCategoryNames(lang),
+                          GetFeatureCategories().GetAllCategoryNames(lang),
                           ToJavaFeatureCategory);
 }
 
@@ -417,7 +417,7 @@ Java_com_mapswithme_maps_editor_Editor_nativeSearchFeatureCategories(JNIEnv * en
   string const & lang = jni::ToNativeString(env, jLang);
   GetFeatureCategories().AddLanguage(lang);
   return jni::ToJavaArray(env, g_featureCategoryClazz,
-                          GetFeatureCategories()->Search(jni::ToNativeString(env, query), lang),
+                          GetFeatureCategories().Search(jni::ToNativeString(env, query), lang),
                           ToJavaFeatureCategory);
 }
 
