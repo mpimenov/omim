@@ -23,10 +23,10 @@ void UnpackMwm(string const & filePath)
   {
     LOG(LINFO, ("Unpacking", tags[i]));
 
-    ReaderSource<FilesContainerR::TReader> reader(container.GetReader(tags[i]));
+    ReaderSource<FilesContainerR::TReader> src(container.GetReader(tags[i]));
     FileWriter writer(filePath + "." + tags[i]);
 
-    rw::ReadAndWrite(reader, writer, 1024 * 1024);
+    rw::ReadAndWrite(src, writer, 1024 * 1024);
   }
 
   LOG(LINFO, ("Unpacking done."));

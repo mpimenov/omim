@@ -26,6 +26,7 @@
 #include "platform/platform.hpp"
 
 #include "coding/file_name_utils.hpp"
+#include "coding/read_write_utils.hpp"
 
 #include "base/timer.hpp"
 
@@ -47,6 +48,9 @@ DEFINE_bool(generate_index, false, "4rd pass - generate index.");
 DEFINE_bool(generate_search_index, false, "5th pass - generate search index.");
 DEFINE_bool(calc_statistics, false, "Calculate feature statistics for specified mwm bucket files.");
 DEFINE_bool(type_statistics, false, "Calculate statistics by type for specified mwm bucket files.");
+DEFINE_bool(decompose_mwm, false,
+            "Write all sections of an mwm to different files. (Experimental. Used for fine-grained "
+            "binary diffs.)");
 DEFINE_bool(preload_cache, false, "Preload all ways and relations cache.");
 DEFINE_string(node_storage, "map",
               "Type of storage for intermediate points representation. Available: raw, map, mem.");
@@ -80,6 +84,18 @@ DEFINE_uint64(planet_version, my::SecondsSinceEpoch(),
 DEFINE_string(srtm_path, "",
               "Path to srtm directory. If it is set, generates section with altitude information "
               "about roads.");
+
+stats::MapInfo CalcStatistics(string const & datFile)
+{
+  LOG(LINFO, ("Calculating statistics for", datFile));
+
+  stats::FileContainerStatistic(datFile);
+  stats::FileContainerStatistic(datFile + ROUTING_FILE_EXTENSION);
+
+  stats::MapInfo info;
+  stats::CalcStatistic(datFile, info);
+  return info;
+}
 
 int main(int argc, char ** argv)
 {
@@ -230,15 +246,14 @@ int main(int argc, char ** argv)
 
   if (FLAGS_calc_statistics)
   {
-    LOG(LINFO, ("Calculating statistics for", datFile));
-
-    stats::FileContainerStatistic(datFile);
-    stats::FileContainerStatistic(datFile + ROUTING_FILE_EXTENSION);
-
-    stats::MapInfo info;
-    stats::CalcStatistic(datFile, info);
+    auto info = CalcStatistics(datFile);
     stats::PrintStatistic(info);
   }
+
+  // if (FLAGS_calc_statistics_diff)
+  // {
+  //
+  // }
 
   if (FLAGS_type_statistics)
   {
@@ -247,6 +262,26 @@ int main(int argc, char ** argv)
     stats::MapInfo info;
     stats::CalcStatistic(datFile, info);
     stats::PrintTypeStatistic(info);
+  }
+
+  if (FLAGS_decompose_mwm)
+  {
+    LOG(LINFO, ("Decomposing", datFile));
+    try
+    {
+      FilesContainerR cont(datFile);
+      cont.ForEachTag([&](FilesContainerR::Tag const & tag) {
+        auto reader = cont.GetReader(tag);
+        auto src = ReaderSource<decltype(reader)>(reader);
+        FileWriter writer(datFile + "." + tag);
+
+        rw::ReadAndWrite(src, writer);
+      });
+    }
+    catch (Reader::Exception const & ex)
+    {
+      LOG(LWARNING, ("Error reading file:", datFile, ex.Msg()));
+    }
   }
 
   if (FLAGS_dump_types)

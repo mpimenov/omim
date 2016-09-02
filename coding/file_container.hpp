@@ -96,7 +96,8 @@ protected:
   void ReadInfo(ReaderT & reader);
 
 public:
-  template <class ToDo> void ForEachTag(ToDo toDo) const
+  template <class ToDo>
+  void ForEachTag(ToDo && toDo) const
   {
     for_each(m_info.begin(), m_info.end(), toDo);
   }
@@ -114,7 +115,8 @@ public:
 
   TReader GetReader(Tag const & tag) const;
 
-  template <typename F> void ForEachTag(F f) const
+  template <typename F>
+  void ForEachTag(F && f) const
   {
     for (size_t i = 0; i < m_info.size(); ++i)
       f(m_info[i].m_tag);
