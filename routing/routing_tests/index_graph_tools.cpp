@@ -80,6 +80,19 @@ void TestIndexGraphTopology::AddDirectedEdge(Vertex from, Vertex to, double weig
   AddDirectedEdge(m_edgeRequests, from, to, weight);
 }
 
+void TestIndexGraphTopology::BlockEdge(Vertex from, Vertex to)
+{
+  for (auto & r : m_edgeRequests)
+  {
+    if (r.m_from == from && r.m_to == to)
+    {
+      r.m_isBlocked = true;
+      return;
+    }
+  }
+  CHECK(false, ("Cannot block edge that is not in the graph", from, to));
+}
+
 bool TestIndexGraphTopology::FindPath(Vertex start, Vertex finish, double & pathWeight,
                                       vector<Edge> & pathEdges) const
 {
@@ -163,7 +176,9 @@ unique_ptr<WorldGraph> TestIndexGraphTopology::Builder::PrepareIndexGraph()
 
   BuildJoints();
 
-  return BuildWorldGraph(move(loader), estimator, m_joints);
+  auto worldGraph = BuildWorldGraph(move(loader), estimator, m_joints);
+  worldGraph->GetIndexGraph(kTestNumMwmId).SetRoadAccess(move(m_roadAccess));
+  return worldGraph;
 }
 
 void TestIndexGraphTopology::Builder::BuildJoints()
@@ -183,8 +198,16 @@ void TestIndexGraphTopology::Builder::BuildJoints()
 
 void TestIndexGraphTopology::Builder::BuildGraphFromRequests(vector<EdgeRequest> const & requests)
 {
+  vector<uint32_t> blockedFeatureIds;
+
   for (auto const & request : requests)
+  {
     BuildSegmentFromEdge(request);
+    if (request.m_isBlocked)
+      blockedFeatureIds.push_back(request.m_id);
+  }
+
+  m_roadAccess.SetPrivateRoads(move(blockedFeatureIds));
 }
 
 void TestIndexGraphTopology::Builder::BuildSegmentFromEdge(EdgeRequest const & request)
@@ -324,5 +347,24 @@ void TestRestrictions(vector<m2::PointD> const & expectedRouteGeom,
   restrictionTest.SetRestrictions(move(restrictions));
   restrictionTest.SetStarter(start, finish);
   TestRouteGeometry(*restrictionTest.m_starter, expectedRouteResult, expectedRouteGeom);
+}
+
+void TestTopologyGraph(TestIndexGraphTopology const & graph, TestIndexGraphTopology::Vertex from,
+                       TestIndexGraphTopology::Vertex to, bool expectedPathFound,
+                       double const expectedWeight,
+                       vector<TestIndexGraphTopology::Edge> const & expectedEdges)
+{
+  double const kEpsilon = 1e-6;
+
+  double pathWeight = 0.0;
+  vector<TestIndexGraphTopology::Edge> pathEdges;
+  bool const pathFound = graph.FindPath(from, to, pathWeight, pathEdges);
+  TEST_EQUAL(pathFound, expectedPathFound, ());
+  if (!pathFound)
+    return;
+
+  TEST(my::AlmostEqualAbs(pathWeight, expectedWeight, kEpsilon),
+       (pathWeight, expectedWeight, pathEdges));
+  TEST_EQUAL(pathEdges, expectedEdges, ());
 }
 }  // namespace routing_test

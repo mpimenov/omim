@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -13,6 +14,11 @@ class RoadAccess final
 {
 public:
   std::vector<uint32_t> const & GetPrivateRoads() const { return m_privateRoads; }
+
+  bool IsBlocked(uint32_t featureId) const
+  {
+    return std::binary_search(m_privateRoads.begin(), m_privateRoads.end(), featureId);
+  }
 
   template <typename V>
   void SetPrivateRoads(V && v) { m_privateRoads = std::forward<V>(v); }

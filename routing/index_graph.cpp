@@ -95,6 +95,8 @@ void IndexGraph::SetRestrictions(RestrictionVec && restrictions)
   m_restrictions = move(restrictions);
 }
 
+void IndexGraph::SetRoadAccess(RoadAccess && roadAccess) { m_roadAccess = move(roadAccess); }
+
 double IndexGraph::CalcSegmentWeight(Segment const & segment)
 {
   return m_estimator->CalcSegmentWeight(segment, m_geometry.GetRoad(segment.GetFeatureId()));
@@ -138,6 +140,18 @@ void IndexGraph::GetNeighboringEdge(Segment const & from, Segment const & to, bo
 
   if (IsRestricted(m_restrictions, from, to, isOutgoing))
     return;
+
+  // todo(@m) Remove.
+  if (m_roadAccess.IsBlocked(from.GetFeatureId()))
+  {
+    LOG(LINFO, ("moving through a barrier!"));
+  }
+  if (m_roadAccess.IsBlocked(to.GetFeatureId()))
+  {
+    // todo(@m) Remove.
+    LOG(LINFO, ("cannot move due to a barrier"));
+    return;
+  }
 
   double const weight = CalcSegmentWeight(isOutgoing ? to : from) +
                         GetPenalties(isOutgoing ? from : to, isOutgoing ? to : from);

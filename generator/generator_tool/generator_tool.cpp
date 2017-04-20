@@ -71,8 +71,9 @@ DEFINE_bool(split_by_polygons, false,
 DEFINE_string(osrm_file_name, "", "Input osrm file to generate routing info.");
 DEFINE_bool(make_routing, false, "Make routing info based on osrm file.");
 DEFINE_bool(make_cross_section, false, "Make cross section in routing file for cross mwm routing (for OSRM routing).");
-DEFINE_bool(make_routing_index, false, "Make sections with the routing information.");
-DEFINE_bool(make_cross_mwm, false,
+// todo(@m) Change these two flags back to false.
+DEFINE_bool(make_routing_index, true, "Make sections with the routing information.");
+DEFINE_bool(make_cross_mwm, true,
             "Make section for cross mwm routing (for dynamic indexed routing).");
 DEFINE_bool(disable_cross_mwm_progress, false,
             "Disable log of cross mwm section building progress.");

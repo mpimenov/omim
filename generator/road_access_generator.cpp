@@ -83,6 +83,7 @@ bool ParseRoadAccess(string const & roadAccessPath,
     privateRoads.emplace_back(featureId);
   }
 
+  sort(privateRoads.begin(), privateRoads.end());
   roadAccess.SetPrivateRoads(move(privateRoads));
 
   return true;
@@ -120,12 +121,19 @@ void RoadAccessWriter::Process(OsmElement const & elem, FeatureParams const & pa
   {
     auto const t = c.GetTypeByPath(f);
     if (params.IsTypeExist(t) && elem.type == OsmElement::EntityType::Way)
+    {
       m_stream << kAccessPrivate << " " << elem.id << endl;
+      LOG(LINFO, (kAccessPrivate, elem.id));
+    }
   }
-
+  /*
   auto t = c.GetTypeByPath({"barrier", "gate"});
-  if (params.IsTypeExist(t))
+  if (params.IsTypeExist(t) && elem.type == OsmElement::EntityType::Way)
+    {
     m_stream << kBarrierGate << " " << elem.id << endl;
+    //  LOG(LINFO, (kBarrierGate, elem.id));
+    }
+  */
 }
 
 bool RoadAccessWriter::IsOpened() const { return m_stream && m_stream.is_open(); }
