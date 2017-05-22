@@ -21,6 +21,20 @@ RoadAccess::Type RoadAccess::GetSegmentType(Segment const & segment) const
   // a Bloom filter or anything else that is faster than std::map.
 
   {
+    auto const it = m_featureIdType.find(segment.GetFeatureId());
+    if (it != m_featureIdType.end())
+      return it->second;
+  }
+
+  {
+    Seg const key(segment);
+    auto const it = m_nonWildcards.find(key);
+    if (it != m_nonWildcards.end())
+      return it->second;
+  }
+  
+
+  {
     Segment key(kFakeNumMwmId, segment.GetFeatureId(), 0 /* wildcard segment idx */,
                 true /* wildcard isForward */);
     auto const it = m_segmentTypes.find(key);
@@ -42,6 +56,24 @@ RoadAccess::Type RoadAccess::GetSegmentType(Segment const & segment) const
 bool RoadAccess::operator==(RoadAccess const & rhs) const
 {
   return m_segmentTypes == rhs.m_segmentTypes;
+}
+
+// RoadAccess::Seg ---------------------------------------------------------------------------------
+RoadAccess::Seg::Seg(Segment const & s):
+  m_featureId(s.GetFeatureId()), m_segmentIdx(s.GetSegmentIdx()), m_forward(s.IsForward()) {}
+
+bool RoadAccess::Seg::operator<(Seg const & rhs) const
+{
+  if (m_featureId != rhs.m_featureId)
+    return m_featureId < rhs.m_featureId;
+  if (m_segmentIdx != rhs.m_segmentIdx)
+    return m_segmentIdx < rhs.m_segmentIdx;
+  return m_forward < rhs.m_forward;
+}
+  
+bool RoadAccess::Seg::operator==(Seg const & rhs) const
+{
+  return m_featureId == rhs.m_featureId && m_segmentIdx == rhs.m_segmentIdx && m_forward == rhs.m_forward;
 }
 
 // Functions ---------------------------------------------------------------------------------------

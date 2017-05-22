@@ -56,14 +56,30 @@ public:
 
   bool operator==(RoadAccess const & rhs) const;
 
+  
+
 private:
+  struct Seg {
+    explicit Seg(routing::Segment const & s);
+
+    bool operator<(Seg const & rhs) const;
+    bool operator==(Seg const & rhs) const;
+
+    uint32_t m_featureId = 0;
+    uint32_t m_segmentIdx = 0;
+    bool m_forward = false;
+  };
+
+  std::map<RoadAccess::Seg, RoadAccess::Type> m_nonWildcards;
+  std::map<uint32_t, RoadAccess::Type> m_featureIdType;
+  
   // todo(@m) Segment's NumMwmId is not used here. Decouple it from
   // segment and use only (fid, idx, forward) in the map.
   //
   // If segmentIdx of a key in this map is 0, it means the
   // entire feature has the corresponding access type.
   // Otherwise, the information is about the segment with number (segmentIdx-1).
-  std::map<Segment, RoadAccess::Type> m_segmentTypes;
+  std::map<routing::Segment, RoadAccess::Type> m_segmentTypes;
 };
 
 std::string ToString(RoadAccess::Type type);
