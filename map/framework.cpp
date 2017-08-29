@@ -1313,6 +1313,8 @@ void Framework::UpdateUserViewportChanged()
 
 bool Framework::SearchEverywhere(search::EverywhereSearchParams const & params)
 {
+  LOG(LINFO, ("started search everywhere"));
+
   search::SearchParams p;
   p.m_query = params.m_query;
   p.m_inputLocale = params.m_inputLocale;
@@ -1338,6 +1340,8 @@ bool Framework::SearchInViewport(search::ViewportSearchParams const & params)
 {
   // TODO: delete me after Cian project is finished.
   m_cianSearchMode = IsCianMode(params.m_query);
+
+  LOG(LINFO, ("started search in viewport"));
 
   search::SearchParams p;
   p.m_query = params.m_query;

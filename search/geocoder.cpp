@@ -35,6 +35,7 @@
 #include "base/logging.hpp"
 #include "base/macros.hpp"
 #include "base/pprof.hpp"
+#include "base/random.hpp"
 #include "base/scope_guard.hpp"
 #include "base/stl_add.hpp"
 #include "base/stl_helpers.hpp"
@@ -312,6 +313,25 @@ size_t OrderCountries(m2::RectD const & pivot, vector<shared_ptr<MwmInfo>> & inf
   auto const sep = stable_partition(infos.begin(), infos.end(), intersects);
   return distance(infos.begin(), sep);
 }
+
+CBV DecimateCianResults(CBV const & cbv)
+{
+  size_t const kMaxCianResults = 10000;
+  static minstd_rand rng;
+  auto survivedIds = base::RandomSample(cbv.PopCount(), kMaxCianResults, rng);
+  sort(survivedIds.begin(), survivedIds.end());
+  auto it = survivedIds.begin();
+  vector<uint64_t> setBits;
+  size_t observed = 0;
+  cbv.ForEach([&](uint64_t bit) {
+    while (it != survivedIds.end() && *it < observed)
+      ++it;
+    if (it != survivedIds.end() && *it == observed)
+      setBits.push_back(bit);
+    ++observed;
+  });
+  return CBV(coding::CompressedBitVectorBuilder::FromBitPositions(move(setBits)));
+}
 }  // namespace
 
 // Geocoder::Geocoder ------------------------------------------------------------------------------
@@ -506,16 +526,26 @@ void Geocoder::GoImpl(vector<shared_ptr<MwmInfo>> & infos, bool inViewport)
       MatchRegions(ctx, Region::TYPE_COUNTRY);
 
       if (index < numIntersectingMaps || m_preRanker.NumSentResults() == 0)
+      {
+        LOG(LINFO, ("aroundpivot1"));
         MatchAroundPivot(ctx);
+        LOG(LINFO, ("aroundpivot2"));
+      }
 
       if (index + 1 >= numIntersectingMaps)
+      {
+        LOG(LINFO, ("prerank1"));
         m_preRanker.UpdateResults(false /* lastUpdate */);
+        LOG(LINFO, ("prerank2"));
+      }
     };
 
     // Iterates through all alive mwms and performs geocoding.
     ForEachCountry(infos, processCountry);
 
+    LOG(LINFO, ("prerank3"));
     m_preRanker.UpdateResults(true /* lastUpdate */);
+    LOG(LINFO, ("prerank4"));
   }
   catch (CancelException & e)
   {
@@ -541,10 +571,19 @@ void Geocoder::InitBaseContext(BaseContext & ctx)
   ctx.m_features.resize(ctx.m_numTokens);
   for (size_t i = 0; i < ctx.m_features.size(); ++i)
   {
+    LOG(LINFO, ("retrieve1"));
     if (m_params.IsPrefixToken(i))
       ctx.m_features[i] = RetrieveAddressFeatures(*m_context, m_cancellable, m_prefixTokenRequest);
     else
       ctx.m_features[i] = RetrieveAddressFeatures(*m_context, m_cancellable, m_tokenRequests[i]);
+
+    if (m_params.m_cianMode)
+    {
+      LOG(LINFO, ("cian features before:", ctx.m_features[i].PopCount()));
+      ctx.m_features[i] = DecimateCianResults(ctx.m_features[i]);
+      LOG(LINFO, ("cian features after:", ctx.m_features[i].PopCount()));
+    }
+    LOG(LINFO, ("retrieve2"));
   }
   ctx.m_hotelsFilter = m_hotelsFilter.MakeScopedFilter(*m_context, m_params.m_hotelsFilter);
 }
@@ -823,7 +862,9 @@ void Geocoder::MatchCities(BaseContext & ctx)
         continue;
 
       LocalityFilter filter(cityFeatures);
+      LOG(LINFO, ("limited search1"));
       LimitedSearch(ctx, filter);
+      LOG(LINFO, ("limited search2"));
     }
   }
 }
@@ -846,7 +887,9 @@ void Geocoder::LimitedSearch(BaseContext & ctx, FeaturesFilter const & filter)
   if (!ctx.m_streets)
     ctx.m_streets = m_streetsCache.Get(*m_context);
 
+  LOG(LINFO, ("unclassified1"));
   MatchUnclassified(ctx, 0 /* curToken */);
+  LOG(LINFO, ("unclassified2"));
 
   auto const search = [this, &ctx]()
   {
@@ -854,8 +897,11 @@ void Geocoder::LimitedSearch(BaseContext & ctx, FeaturesFilter const & filter)
     MatchPOIsAndBuildings(ctx, 0 /* curToken */);
   };
 
+  LOG(LINFO, ("post1"));
   WithPostcodes(ctx, search);
+  LOG(LINFO, ("post2"));
   search();
+  LOG(LINFO, ("post3"));
 }
 
 template <typename TFn>
@@ -926,7 +972,9 @@ void Geocoder::CreateStreetsLayerAndMatchLowerLayers(BaseContext & ctx,
   layer.m_sortedFeatures = &sortedFeatures;
 
   ScopedMarkTokens mark(ctx.m_usedTokens, prediction.m_tokenRange);
+  LOG(LINFO, ("street layer1"));
   MatchPOIsAndBuildings(ctx, 0 /* curToken */);
+  LOG(LINFO, ("street layer2"));
 }
 
 void Geocoder::MatchPOIsAndBuildings(BaseContext & ctx, size_t curToken)
@@ -987,6 +1035,7 @@ void Geocoder::MatchPOIsAndBuildings(BaseContext & ctx, size_t curToken)
     layers.emplace_back();
     MY_SCOPE_GUARD(cleanupGuard, bind(&vector<FeaturesLayer>::pop_back, &layers));
 
+    LOG(LINFO, ("building layer1"));
     auto & layer = layers.back();
     InitLayer(Model::TYPE_BUILDING, m_postcodes.m_tokenRange, layer);
 
@@ -995,7 +1044,10 @@ void Geocoder::MatchPOIsAndBuildings(BaseContext & ctx, size_t curToken)
       features.push_back(base::asserted_cast<uint32_t>(bit));
     });
     layer.m_sortedFeatures = &features;
-    return FindPaths(ctx);
+    LOG(LINFO, ("building layer2"));
+    FindPaths(ctx);
+    LOG(LINFO, ("building layer3"));
+    return;
   }
 
   layers.emplace_back();
@@ -1041,7 +1093,9 @@ void Geocoder::MatchPOIsAndBuildings(BaseContext & ctx, size_t curToken)
       InitLayer(layer.m_type, TokenRange(curToken, curToken + n), layer);
     }
 
+    LOG(LINFO, ("intersect start"));
     features = features.Intersect(ctx.m_features[curToken + n - 1]);
+    LOG(LINFO, ("intersect end"));
 
     CBV filtered = features;
     if (m_filter->NeedToFilter(features))
@@ -1109,7 +1163,11 @@ void Geocoder::MatchPOIsAndBuildings(BaseContext & ctx, size_t curToken)
 
       layer.m_type = static_cast<Model::Type>(i);
       if (IsLayerSequenceSane(layers))
+      {
+        LOG(LINFO, ("mpb1"));
         MatchPOIsAndBuildings(ctx, curToken + n);
+        LOG(LINFO, ("mpb2"));
+      }
     }
   }
 }
@@ -1163,6 +1221,8 @@ void Geocoder::FindPaths(BaseContext const & ctx)
   if (layers.empty())
     return;
 
+  LOG(LINFO, ("findPaths1"));
+
   // Layers ordered by search type.
   vector<FeaturesLayer const *> sortedLayers;
   sortedLayers.reserve(layers.size());
@@ -1176,6 +1236,9 @@ void Geocoder::FindPaths(BaseContext const & ctx)
     m_matcher->SetPostcodes(&m_postcodes.m_features);
   else
     m_matcher->SetPostcodes(nullptr);
+
+
+  LOG(LINFO, ("findPaths2"));
   m_finder.ForEachReachableVertex(
       *m_matcher, sortedLayers, [this, &ctx, &innermostLayer](IntersectionResult const & result)
       {
@@ -1183,6 +1246,8 @@ void Geocoder::FindPaths(BaseContext const & ctx)
         EmitResult(ctx, m_context->GetId(), result.InnermostResult(), innermostLayer.m_type,
                    innermostLayer.m_tokenRange, &result);
       });
+
+  LOG(LINFO, ("findPaths3"));
 }
 
 void Geocoder::EmitResult(BaseContext const & ctx, MwmSet::MwmId const & mwmId, uint32_t ftId,
@@ -1237,6 +1302,9 @@ void Geocoder::EmitResult(BaseContext const & ctx, City const & city, TokenRange
 
 void Geocoder::MatchUnclassified(BaseContext & ctx, size_t curToken)
 {
+  if (m_params.m_cianMode)
+    return;
+
   ASSERT(ctx.m_layers.empty(), ());
 
   // We need to match all unused tokens to UNCLASSIFIED features,

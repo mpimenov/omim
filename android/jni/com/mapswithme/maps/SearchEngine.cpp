@@ -428,6 +428,8 @@ extern "C"
       JNIEnv * env, jclass clazz, jbyteArray bytes, jstring lang, jlong timestamp,
       jboolean hasPosition, jdouble lat, jdouble lon, jobject hotelsFilter)
   {
+    LOG(LINFO, ("ANDROID", "native run search (everywhere)"));
+
     search::EverywhereSearchParams params;
     params.m_query = jni::ToNativeString(env, bytes);
     params.m_inputLocale = ReplaceDeprecatedLanguageCode(jni::ToNativeString(env, lang));
@@ -452,6 +454,8 @@ extern "C"
     // TODO (@alexzatsepin): set up vparams.m_onCompleted here and use
     // HotelsClassifier for hotel queries detection.
     g_framework->NativeFramework()->SearchInViewport(vparams);
+
+    LOG(LINFO, ("ANDROID", "nativeRunInteractiveSearch, isMapAndTable=", isMapAndTable?"1":"0"));
 
     if (isMapAndTable)
     {
@@ -496,6 +500,15 @@ extern "C"
     GetPlatform().RunOnGuiThread([]()
     {
       g_framework->NativeFramework()->CancelSearch(search::Mode::Viewport);
+    });
+  }
+
+  JNIEXPORT void JNICALL
+  Java_com_mapswithme_maps_search_SearchEngine_nativeCancelEverywhereSearch(JNIEnv * env, jclass clazz)
+  {
+    GetPlatform().RunOnGuiThread([]()
+    {
+      g_framework->NativeFramework()->CancelSearch(search::Mode::Everywhere);
     });
   }
 

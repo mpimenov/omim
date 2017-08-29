@@ -115,9 +115,9 @@ void FeaturesLayerPathFinder::FindReachableVerticesTopDown(
     parent.m_hasDelayedFeatures = false;
 
     FeaturesLayer child(*layers[i - 1]);
-    child.m_hasDelayedFeatures =
-        child.m_type == Model::TYPE_BUILDING &&
-        house_numbers::LooksLikeHouseNumber(child.m_subQuery, child.m_lastTokenIsPrefix);
+    // child.m_hasDelayedFeatures =
+    //     child.m_type == Model::TYPE_BUILDING &&
+    //     house_numbers::LooksLikeHouseNumber(child.m_subQuery, child.m_lastTokenIsPrefix);
 
     buffer.clear();
     matcher.Match(child, parent, addEdge);
@@ -163,9 +163,9 @@ void FeaturesLayerPathFinder::FindReachableVerticesBottomUp(
     child.m_hasDelayedFeatures = false;
 
     FeaturesLayer parent(*layers[i + 1]);
-    parent.m_hasDelayedFeatures =
-        parent.m_type == Model::TYPE_BUILDING &&
-        house_numbers::LooksLikeHouseNumber(parent.m_subQuery, parent.m_lastTokenIsPrefix);
+    // parent.m_hasDelayedFeatures =
+    //     parent.m_type == Model::TYPE_BUILDING &&
+    //     house_numbers::LooksLikeHouseNumber(parent.m_subQuery, parent.m_lastTokenIsPrefix);
 
     buffer.clear();
     matcher.Match(child, parent, addEdge);

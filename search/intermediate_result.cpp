@@ -191,6 +191,8 @@ Result PreResult2::GenerateFinalResult(storage::CountryInfoGetter const & infoGe
                                        set<uint32_t> const * pTypes, int8_t locale,
                                        ReverseGeocoder const * coder) const
 {
+
+  LOG(LINFO, ("Generate result start"));
   ReverseGeocoder::Address addr;
   bool addrComputed = false;
 
@@ -198,6 +200,7 @@ Result PreResult2::GenerateFinalResult(storage::CountryInfoGetter const & infoGe
   if (coder && name.empty())
   {
     // Insert exact address (street and house number) instead of empty result name.
+    LOG(LINFO, ("addr1"));
     if (!addrComputed)
     {
       coder->GetNearbyAddress(GetCenter(), addr);
@@ -205,6 +208,7 @@ Result PreResult2::GenerateFinalResult(storage::CountryInfoGetter const & infoGe
     }
     if (addr.GetDistance() == 0)
       name = FormatStreetAndHouse(addr);
+    LOG(LINFO, ("addr2"));
   }
 
   uint32_t const type = GetBestType(pTypes);
@@ -213,6 +217,7 @@ Result PreResult2::GenerateFinalResult(storage::CountryInfoGetter const & infoGe
   string address;
   if (coder)
   {
+    LOG(LINFO, ("addr3"));
     address = GetRegionName(infoGetter, type);
     if (ftypes::IsAddressObjectChecker::Instance()(m_types))
     {
@@ -221,14 +226,17 @@ Result PreResult2::GenerateFinalResult(storage::CountryInfoGetter const & infoGe
         coder->GetNearbyAddress(GetCenter(), addr);
         addrComputed = true;
       }
+
       address = FormatFullAddress(addr, address);
     }
+    LOG(LINFO, ("addr4"));
   }
 
   switch (m_resultType)
   {
   case RESULT_FEATURE:
   case RESULT_BUILDING:
+    LOG(LINFO, ("Generate result end"));
     return Result(m_id, GetCenter(), name, address, pCat->GetReadableFeatureType(type, locale),
                   type, m_metadata);
   default:

@@ -11,6 +11,8 @@ import com.mapswithme.util.concurrency.UiThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import android.util.Log;
+
 public enum SearchEngine implements NativeSearchListener,
                                     NativeMapSearchListener
 {
@@ -103,6 +105,7 @@ public enum SearchEngine implements NativeSearchListener,
   {
     try
     {
+      Log.d("ANDROID", "search -> nativeRunSearch");
       return nativeRunSearch(query.getBytes("utf-8"), Language.getKeyboardLocale(), timestamp, hasLocation, lat, lon, hotelsFilter);
     } catch (UnsupportedEncodingException ignored) { }
 
@@ -114,6 +117,7 @@ public enum SearchEngine implements NativeSearchListener,
   {
     try
     {
+      Log.d("ANDROID", "searchInteractive -> nativeRunInteractiveSearch");
       nativeRunInteractiveSearch(query.getBytes("utf-8"), locale, timestamp, isMapAndTable, hotelsFilter);
     } catch (UnsupportedEncodingException ignored) { }
   }
@@ -144,10 +148,16 @@ public enum SearchEngine implements NativeSearchListener,
     Framework.nativeClearApiPoints();
   }
 
-  public static void cancelSearch()
+  public static void cancelInteractiveSearch()
   {
     sSavedQuery = "";
     nativeCancelInteractiveSearch();
+  }
+
+  public static void cancelEverywhereSearch()
+  {
+    sSavedQuery = "";
+    nativeCancelEverywhereSearch();
   }
 
   public static void showResult(int index)
@@ -182,6 +192,8 @@ public enum SearchEngine implements NativeSearchListener,
   private static native void nativeShowAllResults();
 
   public static native void nativeCancelInteractiveSearch();
+
+  public static native void nativeCancelEverywhereSearch();
 
   /**
    * @return all existing hotel types

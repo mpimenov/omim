@@ -4,6 +4,7 @@
 #include "search/lazy_centers_table.hpp"
 #include "search/pre_ranking_info.hpp"
 
+#include "indexer/feature_algo.hpp"
 #include "indexer/mwm_set.hpp"
 #include "indexer/rank_table.hpp"
 #include "indexer/scales.hpp"
@@ -200,12 +201,17 @@ void PreRanker::Filter(bool viewportSearch)
 
 void PreRanker::UpdateResults(bool lastUpdate)
 {
+  LOG(LINFO, ("update1"));
   FillMissingFieldsInPreResults();
+  LOG(LINFO, ("update2"));
   Filter(m_viewportSearch);
   m_numSentResults += m_results.size();
   m_ranker.SetPreResults1(move(m_results));
   m_results.clear();
+
+  LOG(LINFO, ("update3"));
   m_ranker.UpdateResults(lastUpdate);
+  LOG(LINFO, ("update4"));
 
   if (lastUpdate)
     m_currEmit.swap(m_prevEmit);
@@ -222,12 +228,16 @@ void PreRanker::FilterForViewportSearch()
 {
   auto const & viewport = m_params.m_viewport;
 
+  LOG(LINFO, ("sweep1"));
   my::EraseIf(m_results, [&viewport](PreResult1 const & result) {
     auto const & info = result.GetInfo();
     return !viewport.IsPointInside(info.m_center);
   });
 
+  LOG(LINFO, ("sweep2"));
+  LOG(LINFO, ("sweep size =", m_results.size()));
   SweepNearbyResults(m_params.m_minDistanceOnMapBetweenResults, m_results);
+  LOG(LINFO, ("sweep3"));
 
   size_t const n = m_results.size();
 

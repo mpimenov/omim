@@ -43,6 +43,7 @@ import com.mapswithme.util.statistics.Statistics;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.util.Log;
 
 public class SearchFragment extends BaseMwmFragment
                          implements OnBackPressListener,
@@ -502,6 +503,8 @@ public class SearchFragment extends BaseMwmFragment
 
   void showAllResultsOnMap()
   {
+    Log.d("ANDROID", "called showAllResultsOnMap");
+
     final String query = getQuery();
     SearchRecents.add(query);
     mLastQueryTimestamp = System.nanoTime();
@@ -531,7 +534,7 @@ public class SearchFragment extends BaseMwmFragment
   private void stopSearch()
   {
     SearchEngine.cancelApiCall();
-    SearchEngine.cancelSearch();
+    SearchEngine.cancelInteractiveSearch();
     onSearchEnd();
   }
 
@@ -545,11 +548,14 @@ public class SearchFragment extends BaseMwmFragment
     // TODO @yunitsky Implement more elegant solution.
     if (getActivity() instanceof MwmActivity)
     {
+
+      Log.d("ANDROID", "called search interactive WITH map and table");
       SearchEngine.searchInteractive(
           getQuery(), mLastQueryTimestamp, true /* isMapAndTable */, hotelsFilter);
     }
     else
     {
+      Log.d("ANDROID", "called search engine search");
       if (!SearchEngine.search(getQuery(), mLastQueryTimestamp, mLastPosition.valid,
               mLastPosition.lat, mLastPosition.lon, hotelsFilter))
       {
@@ -590,11 +596,16 @@ public class SearchFragment extends BaseMwmFragment
     mToolbarController.setQuery(category);
     if (!TextUtils.isEmpty(category) && category.equals("cian "))
     {
+      Log.d("ANDROID", "onCategorySelected(cian)");
+
       Statistics.INSTANCE.trackSponsoredEvent(Statistics.EventName.SEARCH_SPONSOR_CATEGORY_SELECTED,
                                               Sponsored.TYPE_CIAN);
+
       showAllResultsOnMap();
+      SearchEngine.cancelEverywhereSearch();
     }
   }
+
 
   private void updateFilterButton(boolean isHotel)
   {
