@@ -104,6 +104,9 @@ public class SearchFragment extends BaseMwmFragment
         return;
       }
 
+      if (mCianCategorySelected)
+        return;
+
       runSearch();
     }
 
@@ -179,6 +182,7 @@ public class SearchFragment extends BaseMwmFragment
 
   private final LastPosition mLastPosition = new LastPosition();
   private boolean mSearchRunning;
+  private boolean mCianCategorySelected;
   private String mInitialQuery;
   @Nullable
   private String mInitialLocale;
@@ -275,9 +279,9 @@ public class SearchFragment extends BaseMwmFragment
 
   private void updateResultsPlaceholder()
   {
-    final boolean show = (!mSearchRunning &&
-                          mSearchAdapter.getItemCount() == 0 &&
-                          mToolbarController.hasQuery());
+    final boolean show = !mSearchRunning
+                         && mSearchAdapter.getItemCount() == 0
+                         && mToolbarController.hasQuery();
 
     UiUtils.showIf(show, mResultsPlaceholder);
     if (mFilterController != null)
@@ -593,19 +597,24 @@ public class SearchFragment extends BaseMwmFragment
   @Override
   public void onCategorySelected(String category)
   {
-    mToolbarController.setQuery(category);
     if (!TextUtils.isEmpty(category) && category.equals("cian "))
     {
+      mCianCategorySelected = true;
+      mToolbarController.setQuery(category);
+
       Log.d("ANDROID", "onCategorySelected(cian)");
 
       Statistics.INSTANCE.trackSponsoredEvent(Statistics.EventName.SEARCH_SPONSOR_CATEGORY_SELECTED,
                                               Sponsored.TYPE_CIAN);
 
       showAllResultsOnMap();
-      SearchEngine.cancelEverywhereSearch();
+      mCianCategorySelected = false;
+    }
+    else
+    {
+      mToolbarController.setQuery(category);
     }
   }
-
 
   private void updateFilterButton(boolean isHotel)
   {
