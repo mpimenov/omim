@@ -311,6 +311,7 @@ void BookmarkManager::OnEditSessionClosed()
 
 void BookmarkManager::NotifyChanges()
 {
+//  LOG(LINFO, ("Bookmarks experiment. Notifying changes."));
   if (!m_changesTracker.CheckChanges() && !m_firstDrapeNotification)
     return;
 
@@ -325,7 +326,9 @@ void BookmarkManager::NotifyChanges()
     }
   }
   if (isBookmarks)
+  {
     SendBookmarksChanges();
+  }
 
   df::DrapeEngineLockGuard lock(m_drapeEngine);
   if (lock)
@@ -521,6 +524,55 @@ void BookmarkManager::LoadBookmarks()
   LoadState();
 }
 
+void BookmarkManager::LoadBookmarksExp()
+{
+  LOG(LINFO, ("Bookmarks experiment. Loading bookmarks"));
+  
+  ClearCategories();
+  m_loadBookmarksFinished = false;
+
+//  NotifyAboutStartAsyncLoading();
+//  GetPlatform().RunTask(Platform::Thread::File, [this]()
+//  {
+    std::string const dir = GetPlatform().SettingsDir();
+    Platform::FilesList files;
+    Platform::GetFilesByExt(dir, BOOKMARKS_FILE_EXTENSION, files);
+
+    auto collection = std::make_shared<KMLDataCollection>();
+    collection->reserve(files.size());
+    std::vector<std::string> filePaths;
+    filePaths.reserve(files.size());
+    for (auto const & file : files)
+    {
+      auto const filePath = dir + file;
+      auto kmlData = LoadKMLFile(filePath);
+      if (m_needTeardown)
+      {
+	CHECK(false, ("Bookmarks experiment. Unexpected teardown"));
+        return;
+      }
+
+      if (kmlData != nullptr)
+      {
+        filePaths.push_back(filePath);
+        collection->emplace_back(std::move(kmlData));
+      }
+    }
+ //   NotifyAboutFinishAsyncLoading(std::move(collection));
+    
+  LOG(LINFO, ("Bookmarks experiment. Creating bookmark categories from files"));
+  CreateCategories(std::move(*collection), false /* autoSave */);
+  m_loadBookmarksFinished = true;
+  LOG(LINFO, ("Bookmarks experiment. Bookmarks loaded"));
+
+//    GetPlatform().RunTask(Platform::Thread::Gui,
+//                          [this, filePaths]() { m_bookmarkCloud.Init(filePaths); });
+//    m_bookmarkCloud.Init(filePaths);
+//  });
+
+//  LoadState();
+}
+
 void BookmarkManager::LoadBookmark(std::string const & filePath, bool isTemporaryFile)
 {
   if (!m_loadBookmarksFinished || m_asyncLoadingInProgress)
@@ -714,10 +766,12 @@ BookmarkCategory * BookmarkManager::GetBmCategory(df::MarkGroupID categoryId) co
 
 void BookmarkManager::SendBookmarksChanges()
 {
+//  LOG(LINFO, ("Bookmarks experiment. Sending changes."));
   if (m_callbacks.m_createdBookmarksCallback != nullptr)
   {
     std::vector<std::pair<df::MarkID, BookmarkData>> marksInfo;
     GetBookmarksData(m_changesTracker.GetCreatedMarkIds(), marksInfo);
+//    LOG(LINFO, ("Bookmarks experiment. Created bookmarks callback."));
     m_callbacks.m_createdBookmarksCallback(marksInfo);
   }
   if (m_callbacks.m_updatedBookmarksCallback != nullptr)

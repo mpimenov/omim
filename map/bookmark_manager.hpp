@@ -174,6 +174,7 @@ public:
 
   /// Scans and loads all kml files with bookmarks in WritableDir.
   void LoadBookmarks();
+  void LoadBookmarksExp();
   void LoadBookmark(std::string const & filePath, bool isTemporaryFile);
 
   /// Uses the same file name from which was loaded, or

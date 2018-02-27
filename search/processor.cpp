@@ -321,8 +321,10 @@ void Processor::LoadCountriesTree() { m_ranker.LoadCountriesTree(); }
 
 void Processor::OnBookmarksCreated(vector<pair<bookmarks::Id, bookmarks::Doc>> const & marks)
 {
+  LOG(LINFO, ("Bookmarks experiment. Adding bookmarks"));
   for (auto const & idDoc : marks)
     m_bookmarksProcessor.Add(idDoc.first /* id */, idDoc.second /* doc */);
+  LOG(LINFO, ("Bookmarks experiment. Added", marks.size(), "bookmarks. Num trie nodes =", m_bookmarksProcessor.GetNumTrieNodes()));
 }
 
 void Processor::OnBookmarksUpdated(vector<pair<bookmarks::Id, bookmarks::Doc>> const & marks)

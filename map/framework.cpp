@@ -702,7 +702,7 @@ void Framework::DeregisterAllMaps()
 
 void Framework::LoadBookmarks()
 {
-  GetBookmarkManager().LoadBookmarks();
+//  GetBookmarkManager().LoadBookmarks();
 }
 
 df::MarkGroupID Framework::AddCategory(string const & categoryName)
@@ -3128,6 +3128,12 @@ boost::optional<m2::PointD> Framework::GetCurrentPosition() const
 
 bool Framework::ParseSearchQueryCommand(search::SearchParams const & params)
 {
+  if (params.m_query == "exp")
+  {
+    LOG(LINFO, ("Bookmarks experiment. Experiment started"));
+    GetBookmarkManager().LoadBookmarksExp();
+    return true;
+  }
   if (ParseDrapeDebugCommand(params.m_query))
     return true;
   if (ParseSetGpsTrackMinAccuracyCommand(params.m_query))

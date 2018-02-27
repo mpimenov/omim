@@ -69,6 +69,8 @@ public:
         .size();
   }
 
+  size_t GetNumTrieNodes() { return m_trie.GetNumNodes(); }
+
 private:
   static Token AddLang(int8_t lang, Token const & token)
   {

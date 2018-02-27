@@ -42,6 +42,8 @@ public:
   // IdfMap::Delegate overrides:
   uint64_t GetNumDocs(strings::UniString const & token, bool isPrefix) const override;
 
+  size_t GetNumTrieNodes() { return m_index.GetNumTrieNodes(); }
+
 private:
   void BailIfCancelled() const { ::search::BailIfCancelled(m_cancellable); }
 
