@@ -5,6 +5,8 @@ set(
   array_adapters.hpp
   assert.hpp
   atomic_shared_ptr.hpp
+  bad_my.cpp
+  bad_my.hpp
   base.cpp
   base.hpp
   bits.hpp

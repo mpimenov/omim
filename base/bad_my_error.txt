@@ -1,0 +1,35 @@
+[ 50%] Building CXX object base/CMakeFiles/base.dir/bad_my.cpp.o
+In file included from omim/base/bad_my.cpp:3:
+In file included from omim/base/assert.hpp:3:
+omim/base/internal/message.hpp:196:14: error: no matching function for call to 'DebugPrint'
+      return DebugPrint(t) + " " + Message(others...);
+             ^~~~~~~~~~
+omim/base/bad_my.cpp:9:3: note: in instantiation of function template specialization
+      'my::impl::Message<unsigned int, int>' requested here
+  CHECK_GREATER(foo.m_id, 0, ());
+  ^
+omim/base/assert.hpp:53:48: note: expanded from macro 'CHECK_GREATER'
+                                   ::my::impl::Message(X, Y), \
+                                               ^
+omim/base/bad_my.hpp:15:13: note: candidate function not viable: no known conversion from
+      'const unsigned int' to 'const my::Foo' for 1st argument
+std::string DebugPrint(Foo const & foo);
+            ^
+In file included from omim/base/bad_my.cpp:3:
+In file included from omim/base/assert.hpp:3:
+omim/base/internal/message.hpp:196:14: error: no matching function for call to 'DebugPrint'
+      return DebugPrint(t) + " " + Message(others...);
+             ^~~~~~~~~~
+omim/base/bad_my.cpp:9:3: note: in instantiation of function template specialization
+      'my::impl::Message<char [20], std::__1::basic_string<char>, std::__1::basic_string<char> >' requested here
+  CHECK_GREATER(foo.m_id, 0, ());
+  ^
+omim/base/assert.hpp:52:27: note: expanded from macro 'CHECK_GREATER'
+  ASSERT_FAIL(::my::impl::Message("CHECK("#X" > "#Y")", \
+                          ^
+omim/base/bad_my.hpp:15:13: note: candidate function not viable: no known conversion from
+      'char const[20]' to 'const my::Foo' for 1st argument
+std::string DebugPrint(Foo const & foo);
+            ^
+2 errors generated.
+make[3]: *** [base/CMakeFiles/base.dir/bad_my.cpp.o] Error 1
