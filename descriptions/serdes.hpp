@@ -9,6 +9,7 @@
 #include "coding/text_storage.hpp"
 
 #include "base/assert.hpp"
+#include "base/logging.hpp"
 #include "base/stl_helpers.hpp"
 
 #include <algorithm>
@@ -63,10 +64,10 @@ class Serializer
 public:
   /// \param descriptions A non-empty unsorted collection of feature descriptions.
   ///                     FeatureDescription::m_description must contain non-empty translations.
-  explicit Serializer(DescriptionsCollection && descriptions);
+  Serializer(DescriptionsCollection && descriptions);
 
   template <typename Sink>
-  void Serialize(Sink & sink)
+  void Serialize(Sink & sink, size_t blockSize)
   {
     WriteToSink(sink, static_cast<uint8_t>(Version::Latest));
 
@@ -86,7 +87,7 @@ public:
     SerializeLangMetaIndex(sink, offsets);
 
     header.m_stringsOffset = sink.Pos() - startPos;
-    SerializeStrings(sink);
+    SerializeStrings(sink, blockSize);
 
     header.m_eosOffset = sink.Pos() - startPos;
     sink.Seek(startPos);
@@ -130,9 +131,9 @@ public:
 
   // Serializes strings in a compressed storage with block access.
   template <typename Sink>
-  void SerializeStrings(Sink & sink)
+  void SerializeStrings(Sink & sink, size_t blockSize)
   {
-    coding::BlockedTextStorageWriter<Sink> writer(sink, 200000 /* blockSize */);
+    coding::BlockedTextStorageWriter<Sink> writer(sink, blockSize);
     std::string str;
     for (auto const & langIndices : m_groupedByLang)
     {
@@ -179,6 +180,7 @@ public:
   {
     InitializeIfNeeded(reader);
 
+//    LOG(LINFO, ("Reading offsets"));
     LangMetaOffset startOffset = 0;
     LangMetaOffset endOffset = 0;
     {
@@ -199,6 +201,7 @@ public:
       endOffset = ofs[d + 1];
     }
 
+    LOG(LINFO, ("Reading lang meta"));
     LangMeta langMeta;
     {
       auto langMetaSubReader = CreateLangMetaSubReader(reader, startOffset, endOffset);
@@ -212,6 +215,7 @@ public:
       }
     }
 
+    LOG(LINFO, ("Reading from the block storage"));
     auto stringsSubReader = CreateStringsSubReader(reader);
     for (auto const lang : langPriority)
     {
@@ -281,6 +285,12 @@ private:
     {
       NonOwningReaderSource source(reader);
       m_header.Deserialize(source);
+
+      auto pr = [](uint64_t sz, std::string name)
+      {
+	LOG(LINFO, (name, sz));
+      };
+      m_header.Visit(pr);
     }
 
     m_initialized = true;

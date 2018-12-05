@@ -14,6 +14,8 @@
 #include "defines.hpp"
 #include "private.h"
 
+#include "descriptions/serdes.hpp"
+
 #include "routing/city_roads.hpp"
 #include "routing/index_router.hpp"
 #include "routing/online_absent_fetcher.hpp"
@@ -96,6 +98,7 @@
 #include "base/math.hpp"
 #include "base/scope_guard.hpp"
 #include "base/stl_helpers.hpp"
+#include "base/string_utils.hpp"
 #include "base/timer.hpp"
 
 #include "std/algorithm.hpp"
@@ -2758,6 +2761,73 @@ string GetPrintableTypes(FeatureType & ft) { return DebugPrint(feature::TypesHol
 uint32_t GetBestType(FeatureType & ft) { return feature::TypesHolder(ft).GetBestType(); }
 }
 
+bool Framework::ParseDescriptionsCommand(string const & query)
+{
+  string const kPrefix = "?descr=";
+  if (!strings::StartsWith(query, kPrefix))
+    return false;
+
+  uint64_t tagId;
+  uint64_t fid64;
+  {
+    string s = query.substr(kPrefix.length());
+    auto const sepPos = s.find(";");
+    if (sepPos == string::npos)
+      return false;
+
+    string const tagStr = s.substr(0, sepPos);
+    string const fidStr = s.substr(sepPos + 1);
+    if (!strings::to_uint64(tagStr, tagId))
+      return false;
+    if (!strings::to_uint64(fidStr, fid64))
+      return false;
+  }
+
+  string const tag = string(DESCRIPTIONS_FILE_TAG) + "_" + strings::to_string(tagId);
+  uint32_t const fid = static_cast<uint32_t>(fid64);
+
+  auto const & dataSource = m_model.GetDataSource();
+  MwmSet::MwmId const mwmId = dataSource.GetMwmIdByCountryFile(platform::CountryFile("Russia_Moscow"));
+
+  MwmSet::MwmHandle handle = m_model.GetDataSource().GetMwmHandleById(mwmId);
+  CHECK(handle.IsAlive(), ());
+
+  auto & cont = handle.GetValue<MwmValue>()->m_cont;
+
+  if (!cont.IsExist(tag))
+  {
+    LOG(LINFO, ("No section", tag, "in the mwm"));
+    return false;
+  }
+
+  descriptions::Deserializer d;
+  auto reader = cont.GetReader(tag);
+
+  // vector<int8_t> langs = {StringUtf8Multilang::GetLangIndex("en")};
+  vector<int8_t> langs = {StringUtf8Multilang::GetLangIndex("ru")};
+
+  // vector<int8_t> langs;
+  // for (auto const & lang : StringUtf8Multilang::GetSupportedLanguages())
+  //   langs.emplace_back(StringUtf8Multilang::GetLangIndex(lang.m_code));
+
+  base::Timer timer;
+  LOG(LINFO, ("Deserializing description..."));
+  string str;
+  if (d.Deserialize(*reader.GetPtr(), fid, langs, str))
+  {
+    double const sec = timer.ElapsedSeconds();
+    if (str.size() > 100)
+      str = str.substr(0, 100) + "...";
+    LOG(LINFO, ("Deserialized description:", str, "in", sec));
+  }
+  else
+  {
+    LOG(LINFO, ("No description for feature id", fid));
+  }
+
+  return true;
+}  
+
 bool Framework::ParseDrapeDebugCommand(string const & query)
 {
   MapStyle desiredStyle = MapStyleCount;
@@ -3517,6 +3587,8 @@ boost::optional<m2::PointD> Framework::GetCurrentPosition() const
 
 bool Framework::ParseSearchQueryCommand(search::SearchParams const & params)
 {
+  if (ParseDescriptionsCommand(params.m_query))
+    return true;
   if (ParseDrapeDebugCommand(params.m_query))
     return true;
   if (ParseSetGpsTrackMinAccuracyCommand(params.m_query))

@@ -5,6 +5,8 @@
 
 #include "descriptions/serdes.hpp"
 
+#include "indexer/classificator_loader.hpp"
+#include "indexer/feature_algo.hpp"
 #include "indexer/feature_meta.hpp"
 
 #include "platform/platform.hpp"
@@ -650,4 +652,119 @@ std::vector<TestDescriptionSectionBuilder::WikiData> const TestDescriptionSectio
     }
   }
 };
+
+
+UNIT_TEST(Descriptions_Moscow)
+{
+  classificator::Load();
+//  string const path = "/tmp/3/moscow_descriptions_dec2018.mwm";
+  string const path = "/tmp/7/Russia_Moscow.mwm";
+  FilesContainerR container(path);
+  string const tag = DESCRIPTIONS_FILE_TAG;
+  TEST(container.IsExist(tag), ());
+
+  descriptions::Deserializer d;
+  auto reader = container.GetReader(tag);
+
+  vector<uint32_t> ids;
+  vector<uint32_t> idsEn;
+  vector<int8_t> langCodesEn = {StringUtf8Multilang::GetLangIndex("en")};
+
+  // vector<int8_t> langCodes;
+  // for (auto const & lang : StringUtf8Multilang::GetSupportedLanguages())
+  //   langCodes.emplace_back(StringUtf8Multilang::GetLangIndex(lang.m_code));
+
+  vector<int8_t> langCodes;
+  for (auto const & lang : StringUtf8Multilang::GetSupportedLanguages())
+  {
+    string s(lang.m_code);
+    if (s != "en" && s != "ru" && s != "es")
+      continue;
+
+    langCodes.emplace_back(StringUtf8Multilang::GetLangIndex(lang.m_code));
+  }
+
+  uint32_t longestFid;
+  string longest;
+  StringUtf8Multilang longestNames;
+  m2::PointD longestCenter;
+  string longestLang;
+
+  map<size_t, size_t> lengthDistribution;
+
+  feature::ForEachFromDat(path, [&](FeatureType & ft, uint32_t fid) {
+    string str;
+    // if (d.Deserialize(*reader.GetPtr(), fid, langCodes, str))
+    //   ids.emplace_back(fid);
+    // if (d.Deserialize(*reader.GetPtr(), fid, langCodesEn, str))
+    //   idsEn.emplace_back(fid);
+
+    for (int8_t lang : langCodes)
+    {
+      if (!d.Deserialize(*reader.GetPtr(), fid, {lang}, str))
+	continue;
+
+      ++lengthDistribution[str.length()];
+      if (longest.length() < str.length())
+      {
+        longest = str;
+	longestFid = fid;
+	longestNames = ft.GetNames();
+	longestCenter = feature::GetCenter(ft);
+	longestLang = StringUtf8Multilang::GetLangByCode(lang);
+      }
+    }
+  });
+
+//  LOG(LINFO, ("total", ids.size()));
+//  LOG(LINFO, ("all", ids));
+//  LOG(LINFO, ("en", idsEn));
+ 
+
+  LOG(LINFO, ("longest", longest.size(), longestLang, longestFid, longestNames, longestCenter, longest));
+
+  LOG(LINFO, ("Descriptions section size=", reader.Size()));
+  map<size_t, size_t> byTenKb;
+//  size_t const kTenKb = 10 * (1<<10);
+  size_t const kTenKb = 10000;
+  size_t const kKb = 1000;
+  map<size_t, size_t> byKb;
+
+  size_t sumSmall = 0;
+  size_t sumLarge = 0;
+
+  for (auto const & e : lengthDistribution)
+  {
+//    LOG(LINFO, (e));
+    size_t const sz = e.first;
+    size_t const am = e.second;
+    size_t const bucketTenKb = (sz + kTenKb - 1) / kTenKb;
+    byTenKb[bucketTenKb] += am;
+    byKb[(sz + kKb - 1) / kKb] += am;    
+
+    if (bucketTenKb <= 1)
+      sumSmall += am * sz;
+    else
+      sumLarge += am * sz;
+  }
+
+  for (auto const & e : byKb)
+  {
+    if (e.first > 10)
+      continue;
+    LOG(LINFO, ((e.first - 1) * kKb, "-", e.first * kKb, ":", e.second));
+  }
+
+
+  for (auto const & e : byTenKb)
+  {
+    
+    if (e.first <= 1)
+      continue;
+
+    LOG(LINFO, ((e.first - 1) * kTenKb, "-", e.first * kTenKb, ":", e.second));
+  }
+
+  LOG(LINFO, ("total small:",  sumSmall, "total large:", sumLarge));
+}
 }  // namespace generator_tests

@@ -240,6 +240,7 @@ public:
     auto & entry = m_cache[blockIx];
     if (!entry.m_valid)
     {
+      LOG(LINFO, ("Cache miss"));
       NonOwningReaderSource source(reader);
       source.Skip(bi.m_offset);
 
@@ -255,8 +256,13 @@ public:
         CHECK_GREATER_OR_EQUAL(sub.m_offset + sub.m_length, sub.m_offset, ());
         offset += sub.m_length;
       }
+      LOG(LINFO, ("Decoding bwt"));
       BWTCoder::ReadAndDecodeBlock(source, std::back_inserter(entry.m_value));
       entry.m_valid = true;
+    }
+    else
+    {
+      LOG(LINFO, ("Cache hit"));
     }
     ASSERT(entry.m_valid, ());
 
@@ -269,6 +275,7 @@ public:
     auto const & si = entry.m_subs[stringIx];
     auto const & value = entry.m_value;
     ASSERT_LESS_OR_EQUAL(si.m_offset + si.m_length, value.size(), ());
+    LOG(LINFO, ("Extracting the substring, length =", si.m_length, "of", value.length()));
     return value.substr(si.m_offset, si.m_length);
   }
 

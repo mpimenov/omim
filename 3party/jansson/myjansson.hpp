@@ -107,6 +107,18 @@ void FromJSONObjectOptionalField(json_t * root, std::string const & field, T & r
   FromJSON(json, result);
 }
 
+template <typename T>
+void FromJSONObjectOptionalFieldOrNull(json_t * root, std::string const & field, T & result)
+{
+  auto * json = base::GetJSONOptionalField(root, field);
+  if (!json || base::JSONIsNull(json))
+  {
+    result = T{};
+    return;
+  }
+  FromJSON(json, result);
+}
+
 template <typename T,
           typename std::enable_if<std::is_integral<T>::value, void>::type* = nullptr>
 inline base::JSONPtr ToJSON(T value) { return base::NewJSONInt(value); }

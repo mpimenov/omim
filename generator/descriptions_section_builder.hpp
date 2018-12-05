@@ -134,7 +134,7 @@ struct DescriptionsSectionBuilder
     FilesContainerW cont(mwmFile, FileWriter::OP_WRITE_EXISTING);
     FileWriter writer = cont.GetWriter(DESCRIPTIONS_FILE_TAG);
     descriptions::Serializer serializer(std::move(descriptionList));
-    serializer.Serialize(writer);
+    serializer.Serialize(writer, 200000 /* blockSize */);
 
     LOG(LINFO, ("Section", DESCRIPTIONS_FILE_TAG, "is built for", mwmFile));
     LOG(LINFO, (stat.LangStatisticsToString()));
@@ -142,4 +142,6 @@ struct DescriptionsSectionBuilder
 };
 
 void BuildDescriptionsSection(std::string const & wikipediaDir, std::string const & mwmFile);
+
+void RebuildDescriptionsSection(std::string const & mwmPath);
 }  // namespace generator

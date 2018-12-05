@@ -78,11 +78,14 @@ public:
     auto const start = ReadVarUint<uint64_t, Source>(source);
 
     HuffmanCoder huffman;
+    LOG(LINFO, ("Reading huffman encoding"));
     huffman.ReadEncoding(source);
 
     bwtBuffer.clear();
+    LOG(LINFO, ("Reading huffman-encoded string"));
     huffman.ReadAndDecode(source, std::back_inserter(bwtBuffer));
 
+    LOG(LINFO, ("Move-to-front"));
     size_t const n = bwtBuffer.size();
     base::MoveToFront mtf;
     for (size_t i = 0; i < n; ++i)
@@ -96,7 +99,9 @@ public:
       CHECK_LESS(start, n, ());
 
     revBuffer.resize(n);
+    LOG(LINFO, ("Running RevBWT"));
     base::RevBWT(n, static_cast<size_t>(start), bwtBuffer.data(), revBuffer.data());
+    LOG(LINFO, ("Copying the result"));
     return std::copy(revBuffer.begin(), revBuffer.end(), it);
   }
 

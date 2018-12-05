@@ -29,12 +29,12 @@ namespace base
 //
 // where '*' denotes original string.
 //
-// Our implementation will sort rotations in a way as there is an
+// Our implementation will sort rotations in a way as if there is an
 // implicit '$' that is less than any other byte in |s|, but does not
 // return this '$'. Therefore, the order of rotations will be the same
 // as above, without the first '$abaaba':
 //
-//   Sorted rotations:      ours BWT:
+//   Sorted rotations:      our BWT:
 //   aabaab                 b
 //   aabaab                 b
 //   abaaba                 a
@@ -45,7 +45,7 @@ namespace base
 // where '*' denotes the index of original string. As one can see,
 // there are two 'abaaba' strings, but as mentioned, rotations are
 // sorted like there is an implicit '$' at the end of the original
-// string. It's possible to get from "ours BWT" to the "original BWT",
+// string. It's possible to get from "our BWT" to the "original BWT",
 // see the code for details.
 //
 // Complexity: O(n) time and O(n) memory.

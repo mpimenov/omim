@@ -668,6 +668,8 @@ private:
   /// @returns true if command was handled by editor.
   bool ParseEditorDebugCommand(search::SearchParams const & params);
 
+  bool ParseDescriptionsCommand(string const & query);
+
   /// @returns true if command was handled by drape.
   bool ParseDrapeDebugCommand(string const & query);
 

@@ -1,6 +1,7 @@
 #include "base/bwt.hpp"
 
 #include "base/assert.hpp"
+#include "base/logging.hpp"
 #include "base/suffix_array.hpp"
 
 #include <algorithm>
@@ -51,9 +52,23 @@ public:
       return kEOS;
 
     --i;
-    auto it = upper_bound(m_starts.begin(), m_starts.end(), i);
-    ASSERT(it != m_starts.begin(), ());
-    --it;
+
+   auto it = upper_bound(m_starts.begin(), m_starts.end(), i);
+   ASSERT(it != m_starts.begin(), ());
+   --it;
+
+   //  auto it = lower_bound(m_starts.begin(), m_starts.end(), i);
+   //  ASSERT(it != m_starts.end(), ());
+
+   // auto it1 = upper_bound(m_starts.begin(), m_starts.end(), i);
+   //  ASSERT(it1 != m_starts.begin(), ());
+   //  --it1;
+
+   //  auto d1 = distance(m_starts.begin(), it);
+   //  auto d2 = distance(m_starts.begin(), it1);
+   //  LOG(LINFO, ("!!", d1, d2, i, m_starts));
+
+    
     return static_cast<uint32_t>(distance(m_starts.begin(), it));
   }
 
@@ -71,6 +86,17 @@ public:
       return i;
     --it;
     return i - *it;
+  }
+
+  // Returns the start of the group of consecutive
+  // symbols |c|.
+  size_t Start(uint32_t c)
+  {
+    if (c == kEOS)
+      return 0;
+
+    ASSERT_LESS(c, kNumBytes, ());
+    return m_starts[static_cast<size_t>(c)] + 1;
   }
 
 private:
@@ -180,7 +206,9 @@ void RevBWT(size_t n, size_t start, uint8_t const * s, uint8_t * r)
     ASSERT(first[curr] != kEOS, ());
 
     r[i] = first[curr];
-    curr = last.Select(r[i], first.Rank(curr));
+//    curr = last.Select(r[i], first.Rank(curr));
+    auto const rank = curr - first.Start(r[i]);
+    curr = last.Select(r[i], rank);
   }
 
   ASSERT_EQUAL(first[curr], kEOS, ());
