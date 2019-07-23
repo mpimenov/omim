@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kml/type_utils.hpp"
+#include "kml/types.hpp"
 
 #include "base/assert.hpp"
 

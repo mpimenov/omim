@@ -8,7 +8,7 @@
 
 #include "qt/qt_common/qtoglcontextfactory.hpp"
 
-#include "kml/type_utils.hpp"
+#include "kml/types.hpp"
 
 #include "indexer/feature.hpp"
 

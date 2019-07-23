@@ -1,6 +1,6 @@
 #import "MWMTableViewController.h"
 
-#include "kml/type_utils.hpp"
+#include "kml/types.hpp"
 
 @protocol MWMSelectSetDelegate <NSObject>
 

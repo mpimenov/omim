@@ -1,7 +1,5 @@
 #pragma once
 
-#include "kml/type_utils.hpp"
-
 #include "base/visitor.hpp"
 
 #include <cmath>
@@ -13,6 +11,30 @@
 
 namespace kml
 {
+using Timestamp = std::chrono::time_point<std::chrono::system_clock>;
+using LocalizableString = std::unordered_map<int8_t, std::string>;
+using LocalizableStringSubIndex = std::map<int8_t, uint32_t>;
+using LocalizableStringIndex = std::vector<LocalizableStringSubIndex>;
+using Properties = std::map<std::string, std::string>;
+
+using MarkGroupId = uint64_t;
+using MarkId = uint64_t;
+using TrackId = uint64_t;
+using LocalId = uint8_t;
+
+using MarkIdCollection = std::vector<MarkId>;
+using TrackIdCollection = std::vector<TrackId>;
+
+using MarkIdSet = std::set<MarkId, std::greater<MarkId>>;
+using TrackIdSet = std::set<TrackId>;
+
+using GroupIdCollection = std::vector<MarkGroupId>;
+using GroupIdSet = std::set<MarkGroupId>;
+
+MarkGroupId constexpr kInvalidMarkGroupId = std::numeric_limits<MarkGroupId>::max();
+MarkId constexpr kInvalidMarkId = std::numeric_limits<MarkId>::max();
+TrackId constexpr kInvalidTrackId = std::numeric_limits<TrackId>::max();
+
 enum class PredefinedColor : uint8_t
 {
   // Do not change the order because of binary serialization.

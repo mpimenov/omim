@@ -34,7 +34,7 @@
 #include "drape/drape_global.hpp"
 #include "drape/graphics_context_factory.hpp"
 
-#include "kml/type_utils.hpp"
+#include "kml/types.hpp"
 
 #include "ugc/api.hpp"
 

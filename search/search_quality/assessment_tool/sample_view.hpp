@@ -6,7 +6,7 @@
 
 #include "geometry/point2d.hpp"
 
-#include "kml/type_utils.hpp"
+#include "kml/types.hpp"
 
 #include <boost/optional.hpp>
 

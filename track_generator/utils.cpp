@@ -1,7 +1,6 @@
 #include "track_generator/utils.hpp"
 
 #include "kml/serdes.hpp"
-#include "kml/type_utils.hpp"
 #include "kml/types.hpp"
 
 #include "routing/base/followed_polyline.hpp"
